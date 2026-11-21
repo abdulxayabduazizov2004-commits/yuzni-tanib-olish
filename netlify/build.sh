@@ -2,6 +2,11 @@
 # Netlify build: web/ ni dist/ ga ko'chiradi va backendga proksi qoidalarini (_redirects) yozadi.
 set -eu
 
+# 1) Netlify sozlamalaridagi BACKEND_URL; 2) bo'lmasa - netlify/backend_url.txt fayli
+if [ -z "${BACKEND_URL:-}" ] && [ -f netlify/backend_url.txt ]; then
+  BACKEND_URL=$(tr -d ' \r\n' < netlify/backend_url.txt)
+  echo "BACKEND_URL netlify/backend_url.txt dan olindi"
+fi
 if [ -z "${BACKEND_URL:-}" ]; then
   echo "XATO: BACKEND_URL muhit o'zgaruvchisi berilmagan."
   echo "Netlify -> Site configuration -> Environment variables -> BACKEND_URL = https://<backend-manzil>"
