@@ -6,12 +6,24 @@ const initials = (n) => (n || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).joi
 const hue = (s) => [...(s || "")].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 200);
 const avatarBg = (name) => `linear-gradient(135deg, hsl(${hue(name)} 70% 45%), hsl(${(hue(name) + 50) % 360} 70% 35%))`;
 
+/* Kirish tokeni: Netlify proksi / tunnel orqali cookie yo'qolsa ham ishlaydi */
+const TOKEN_KEY = "faceid_token";
+const store = (k, v, persist) => { try { (persist ? localStorage : sessionStorage).setItem(k, v); } catch { /* */ } };
+const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; } };
+const setToken = (t, persist = true) => { clearToken(); if (t) store(TOKEN_KEY, t, persist); };
+const clearToken = () => { try { sessionStorage.removeItem(TOKEN_KEY); localStorage.removeItem(TOKEN_KEY); } catch { /* */ } };
+// <img> va havolalar sarlavha yubora olmaydi - token URL'da beriladi
+const authUrl = (u) => { const t = getToken(); return t ? u + (u.includes("?") ? "&" : "?") + "t=" + encodeURIComponent(t) : u; };
+const photoUrl = (id) => authUrl(`/api/users/${id}/photo?v=${state.photoVer}`);
+
 const api = async (url, opts = {}) => {
-  const o = { ...opts };
-  if (o.json !== undefined) { o.body = JSON.stringify(o.json); o.headers = { "Content-Type": "application/json" }; delete o.json; }
+  const o = { ...opts, headers: { ...(opts.headers || {}) } };
+  if (o.json !== undefined) { o.body = JSON.stringify(o.json); o.headers["Content-Type"] = "application/json"; delete o.json; }
+  const tok = getToken();
+  if (tok) o.headers.Authorization = "Bearer " + tok;
   const r = await fetch(url, o);
   const data = r.headers.get("content-type")?.includes("json") ? await r.json() : await r.text();
-  if (r.status === 401 && data?.auth === false && state.me) { location.reload(); throw new Error(data.error); }
+  if (r.status === 401 && data?.auth === false && state.me) { clearToken(); location.reload(); throw new Error(data.error); }
   if (!r.ok) throw new Error(data?.error || r.statusText);
   return data;
 };
@@ -160,7 +172,7 @@ function renderInFrame() {
   $("#inframe-count").textContent = ds.length;
   $("#inframe").innerHTML = ds.length ? ds.map((d) => {
     const n = d.pid ? d.name : "Noma'lum";
-    const av = d.pid ? `<div class="avatar" style="background-image:url('/api/users/${d.pid}/photo?v=${state.photoVer}'),${avatarBg(n)}"></div>`
+    const av = d.pid ? `<div class="avatar" style="background-image:url('${photoUrl(d.pid)}'),${avatarBg(n)}"></div>`
                      : `<div class="avatar" style="background:rgba(244,63,94,.18);color:#fda4af">?</div>`;
     const tag = !d.pid ? `<span class="tag bad">noma'lum</span>` : d.kind === "body" ? `<span class="tag body">tana</span>` : `<span class="tag">${esc(d.via || "yuz")}</span>`;
     return `<div class="row">${av}<div class="meta"><b class="big-name">${esc(n)}</b><div class="bar"><i style="width:${Math.max(0, Math.min(100, d.score * 100))}%"></i></div>${d.attrs?.length ? `<div class="attrs">${attrChips(d.attrs)}</div>` : ""}</div>${tag}</div>`;
@@ -318,7 +330,7 @@ function renderUsers() {
   $("#users-sub").textContent = `${state.users.length} ta ro'yxatdan o'tgan foydalanuvchi`;
   $("#users-grid").innerHTML = list.length ? list.map((u) => `
     <div class="card ucard" data-id="${u.id}">
-      <div class="cover" style="background-image:url('/api/users/${u.id}/photo?v=${state.photoVer}'),${avatarBg(u.name)}">${u.faces ? "" : initials(u.name)}</div>
+      <div class="cover" style="background-image:url('${photoUrl(u.id)}'),${avatarBg(u.name)}">${u.faces ? "" : initials(u.name)}</div>
       <div class="body"><h3>${esc(u.name)}</h3><div class="sub">${esc([u.position, u.department].filter(Boolean).join(" · ") || "—")}</div>
         <div class="stats"><span class="tag violet">${u.faces} yuz</span><span class="tag body">${u.bodies} tana</span><span class="tag">${u.seen} marta</span></div></div>
     </div>`).join("") : `<div class="card empty">Foydalanuvchi topilmadi</div>`;
@@ -333,7 +345,7 @@ function openUser(pid) {
   openModal(`
     <div class="modal-head"><h2>${esc(u.name)}</h2><button class="close">×</button></div>
     <div class="profile">
-      <div class="photo" style="background-image:url('/api/users/${u.id}/photo?v=${state.photoVer}'),${avatarBg(u.name)}"></div>
+      <div class="photo" style="background-image:url('${photoUrl(u.id)}'),${avatarBg(u.name)}"></div>
       <div>
         <div class="stats" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
           <span class="tag violet">${u.faces} yuz namunasi</span><span class="tag body">${u.bodies} tana namunasi</span><span class="tag">${u.seen} marta aniqlangan</span></div>
@@ -383,6 +395,7 @@ async function loadDashboard() {
   $("#kpis").innerHTML = KPIS.map(([k, l, c, ic]) => `
     <div class="card kpi" style="--c:${c}"><div class="ic" style="background:${c}22;color:${c}"><svg viewBox="0 0 24 24">${ic}</svg></div>
       <div class="v">${s[k] ?? 0}</div><div class="l">${l}</div></div>`).join("");
+  $("#csv-link").href = authUrl("/api/events.csv");
   $("#dash-time").textContent = `Yangilandi: ${new Date().toLocaleTimeString("uz-UZ")} · baza hajmi ${s.db_size_mb.toFixed(1)} MB · ${s.face_samples} yuz / ${s.body_samples} tana vektori`;
   barChart($("#chart-days"), d.daily.map((x) => x[0].slice(5).replace("-", ".")), [[d.daily.map((x) => x[1]), "#7c5cff"], [d.daily.map((x) => x[2]), "#f43f5e"]]);
   barChart($("#chart-hours"), d.hourly.map((_, i) => String(i).padStart(2, "0")), [[d.hourly, "#22d3ee"]], 3);
@@ -391,7 +404,7 @@ async function loadDashboard() {
   $("#ev-chips").innerHTML = [["", "Barchasi"], ...Object.entries(types)].map(([k, v]) => `<span class="chip ${state.evType === k ? "active" : ""}" data-t="${k}">${esc(v)}</span>`).join("");
   $$("#ev-chips .chip").forEach((c) => (c.onclick = () => { state.evType = c.dataset.t; loadDashboard(); }));
   $("#ev-body").innerHTML = d.events.length ? d.events.map((e) => {
-    const snap = ["recognized", "unknown"].includes(e.type) ? `<img class="thumb" loading="lazy" src="/api/events/${e.id}/snapshot" data-eid="${e.id}" onerror="this.style.visibility='hidden'">` : `<div class="thumb"></div>`;
+    const snap = ["recognized", "unknown"].includes(e.type) ? `<img class="thumb" loading="lazy" src="${authUrl(`/api/events/${e.id}/snapshot`)}" data-eid="${e.id}" onerror="this.style.visibility='hidden'">` : `<div class="thumb"></div>`;
     const name = e.user_name || (e.type === "unknown" ? "Noma'lum" : "—");
     return `<tr><td>${snap}</td><td><b>${esc(name)}</b></td><td><span class="tag ${EV_STYLE[e.type] ?? ""}">${esc(types[e.type] || e.type)}</span></td>
       <td class="muted">${esc(e.method || "")}</td><td>${["recognized", "unknown"].includes(e.type) && e.note ? `<div class="attrs">${e.note.split(", ").map((a) => `<span class="attr">${esc(a)}</span>`).join("")}</div>` : `<span class="muted">${esc(["recognized", "unknown"].includes(e.type) ? "" : e.note || "")}</span>`}</td><td>${e.score != null ? Math.round(e.score * 100) + "%" : ""}</td><td class="muted">${esc(e.created_at)}</td></tr>`;
@@ -399,7 +412,7 @@ async function loadDashboard() {
   $$("#ev-body .thumb[data-eid]").forEach((img) => (img.onclick = () => openModal(`<div class="modal-head"><h2>Kadrdagi surat</h2><button class="close">×</button></div><img class="result-img" src="${img.src}">`)));
 
   $("#top-users").innerHTML = d.top.length ? d.top.map((u, i) => `
-    <div class="row"><div class="rank">${i + 1}</div><div class="avatar" style="background-image:url('/api/users/${u.id}/photo?v=${state.photoVer}'),${avatarBg(u.name)}"></div>
+    <div class="row"><div class="rank">${i + 1}</div><div class="avatar" style="background-image:url('${photoUrl(u.id)}'),${avatarBg(u.name)}"></div>
       <div class="meta"><b>${esc(u.name)}</b><br><small>${esc(u.last_seen || "hali ko'rilmagan")}</small></div><div class="n">${u.seen}</div></div>`).join("")
     : `<div class="empty">Foydalanuvchilar yo'q</div>`;
 }
@@ -497,7 +510,7 @@ function passwordModal(id, name) {
     const f = Object.fromEntries(new FormData(e.target));
     if (f.new !== f.new2) { $("#pw-error").textContent = "Parollar mos kelmadi"; return; }
     try {
-      if (own) await api("/api/auth/password", { method: "POST", json: { old: f.old, new: f.new } });
+      if (own) { const x = await api("/api/auth/password", { method: "POST", json: { old: f.old, new: f.new } }); setToken(x.token, !!localStorage.getItem(TOKEN_KEY)); }
       else await api(`/api/accounts/${id}`, { method: "PUT", json: { password: f.new } });
       closeModal(); toast("Parol o'zgartirildi", "var(--ok)");
     } catch (err) { $("#pw-error").textContent = err.message; }
@@ -529,6 +542,7 @@ async function submitAuth(form, url, errEl, check = () => null) {
   btn.disabled = true;
   try {
     const r = await api(url, { method: "POST", json: { ...f, remember: !!f.remember } });
+    setToken(r.token, !!f.remember || url.endsWith("register"));
     if (r.first_admin) toast("Siz birinchi foydalanuvchisiz — administrator huquqi berildi", "var(--ok)");
     await startApp(r.user);
   } catch (e) { $(errEl).textContent = e.message; }
@@ -586,7 +600,8 @@ $("#btn-change-pw").addEventListener("click", () => passwordModal(null));
 $("#btn-logout").addEventListener("click", async () => {
   state.camOn = false;
   if (video.srcObject) video.srcObject.getTracks().forEach((t) => t.stop());
-  await api("/api/auth/logout", { method: "POST" });
+  await api("/api/auth/logout", { method: "POST" }).catch(() => null);
+  clearToken();
   location.reload();
 });
 

@@ -19,7 +19,8 @@ import time
 from functools import wraps
 from pathlib import Path
 
-from flask import jsonify, session
+from flask import current_app, g, jsonify, request, session
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 ROLES = {"admin": "Administrator", "director": "Direktor", "user": "Foydalanuvchi"}
@@ -31,6 +32,7 @@ PAGES = {
 }
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,32}$")
 MAX_FAILS, LOCK_SECONDS = 5, 300
+TOKEN_MAX_AGE = 12 * 3600  # token amal qilish muddati (s)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS accounts (
@@ -178,15 +180,44 @@ class Accounts:
         return self.update(uid, uid, password=new)
 
     # --- himoya dekoratori ---
-    def current(self):
-        uid = session.get("uid")
-        if not uid:
+    # --- tokenlar (proksi/tunnel orqali cookie yo'qolsa ham ishlaydi) ---
+    @staticmethod
+    def _signer() -> URLSafeTimedSerializer:
+        return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="faceid-auth")
+
+    def issue_token(self, row) -> str:
+        # "pv" - parol xeshining bir qismi: parol o'zgarsa, eski tokenlar bekor bo'ladi
+        return self._signer().dumps({"uid": row["id"], "pv": row["password_hash"][-12:]})
+
+    def _from_token(self, token: str):
+        try:
+            data = self._signer().loads(token, max_age=TOKEN_MAX_AGE)
+        except BadSignature:
             return None
-        row = self.get(uid)
-        if row is None or not row["active"]:
-            session.clear()
+        row = self.get(data.get("uid"))
+        if row is None or row["password_hash"][-12:] != data.get("pv"):
             return None
         return row
+
+    def current(self):
+        """Joriy foydalanuvchi: Authorization: Bearer <token>, ?t=<token> (faqat GET rasmlar uchun) yoki cookie."""
+        if "auth_row" in g:
+            return g.auth_row
+        row = None
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            row = self._from_token(auth[7:].strip())
+        elif request.method == "GET" and request.args.get("t"):
+            row = self._from_token(request.args["t"])
+        elif session.get("uid"):
+            row = self.get(session["uid"])
+        if row is not None and not row["active"]:
+            row = None
+        g.auth_row = row
+        return row
+
+    def current_id(self) -> int:
+        return self.current()["id"]
 
     def require(self, *roles: str):
         """API'ni faqat ko'rsatilgan rollarga ochadi (rol bazadan har safar qayta o'qiladi)."""

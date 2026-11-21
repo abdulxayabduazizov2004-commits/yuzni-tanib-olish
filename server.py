@@ -125,7 +125,8 @@ def auth_login():
     session.clear()
     session.permanent = bool(data.get("remember", True))
     session["uid"] = row["id"]
-    return jsonify(user=_me_json(accounts.get(row["id"])))
+    full = accounts.get(row["id"])
+    return jsonify(user=_me_json(full), token=accounts.issue_token(full))
 
 
 @app.post("/api/auth/register")
@@ -137,7 +138,8 @@ def auth_register():
     session.clear()
     session.permanent = True
     session["uid"] = row["id"]
-    return jsonify(user=_me_json(accounts.get(row["id"])), first_admin=row["role"] == "admin")
+    full = accounts.get(row["id"])
+    return jsonify(user=_me_json(full), token=accounts.issue_token(full), first_admin=row["role"] == "admin")
 
 
 @app.post("/api/auth/logout")
@@ -150,8 +152,10 @@ def auth_logout():
 @require()
 def auth_password():
     data = request.get_json(force=True) or {}
-    err = accounts.change_own_password(session["uid"], data.get("old"), data.get("new"))
-    return (jsonify(error=err), 400) if err else jsonify(ok=True)
+    uid = accounts.current_id()
+    err = accounts.change_own_password(uid, data.get("old"), data.get("new"))
+    # parol o'zgarganda eski tokenlar bekor bo'ladi - joriy seans uchun yangisini beramiz
+    return (jsonify(error=err), 400) if err else jsonify(ok=True, token=accounts.issue_token(accounts.get(uid)))
 
 
 # ------------------------------------------------------------------ hisoblarni boshqarish (admin)
@@ -165,7 +169,7 @@ def accounts_list():
 @require(ADMIN)
 def accounts_update(uid):
     data = request.get_json(force=True) or {}
-    err = accounts.update(uid, session["uid"], role=data.get("role"), active=data.get("active"),
+    err = accounts.update(uid, accounts.current_id(), role=data.get("role"), active=data.get("active"),
                           password=data.get("password"))
     return (jsonify(error=err), 400) if err else jsonify(ok=True)
 
@@ -173,7 +177,7 @@ def accounts_update(uid):
 @app.delete("/api/accounts/<int:uid>")
 @require(ADMIN)
 def accounts_delete(uid):
-    err = accounts.delete(uid, session["uid"])
+    err = accounts.delete(uid, accounts.current_id())
     return (jsonify(error=err), 400) if err else jsonify(ok=True)
 
 
