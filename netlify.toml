@@ -1,0 +1,21 @@
+# Netlify: frontend (web/) statik sayt sifatida, /api/* esa backend serverga proksi qilinadi.
+# Netlify sozlamalarida (Site configuration -> Environment variables) BACKEND_URL ni bering,
+# masalan: https://faceid-backend.onrender.com   (oxirida / bo'lmasin)
+
+[build]
+  command = "sh netlify/build.sh"
+  publish = "dist"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+    # kamera faqat shu saytning o'zida ishlatilishi mumkin
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

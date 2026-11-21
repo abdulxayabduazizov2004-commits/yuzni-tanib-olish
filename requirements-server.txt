@@ -1,0 +1,8 @@
+# Server (Docker) uchun: ekransiz OpenCV + gunicorn
+opencv-contrib-python-headless>=4.8
+numpy>=1.24
+pillow>=10.1
+flask>=3.0
+onnxruntime>=1.17
+tokenizers>=0.15
+gunicorn>=22

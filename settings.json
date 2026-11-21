@@ -1,0 +1,17 @@
+{
+  "face_det_score": 0.8,
+  "face_match": 0.42,
+  "face_learn": 0.55,
+  "face_novelty": 0.8,
+  "face_gallery_max": 150,
+  "body_match": 0.72,
+  "body_novelty": 0.9,
+  "body_gallery_max": 60,
+  "min_face_px": 60,
+  "min_sharpness": 25.0,
+  "learn_interval": 1.5,
+  "stable_frames": 5,
+  "body_enabled": true,
+  "auto_learn": true,
+  "attributes_enabled": true
+}

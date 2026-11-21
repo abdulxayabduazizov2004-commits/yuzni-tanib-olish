@@ -1,0 +1,17 @@
+# Render.com Blueprint (ixtiyoriy): backendni Docker orqali doimiy disk bilan ishga tushiradi.
+# Render -> New -> Blueprint -> shu repozitoriyni tanlang.
+services:
+  - type: web
+    name: faceid-backend
+    runtime: docker
+    plan: standard          # kamida 2 GB RAM kerak (modellar xotiraga yuklanadi)
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PROXY_HOPS
+        value: "2"          # Netlify proksi + Render proksi
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 5

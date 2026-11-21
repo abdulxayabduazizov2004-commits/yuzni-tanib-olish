@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Ma'lumotlar bazasi va maxfiy kalit - HECH QACHON git'ga qo'ymang (biometrik ma'lumotlar!)
+data/
+
+# Modellar katta (300+ MB), `python download_models.py` bilan yuklanadi
+models/
+
+# Netlify build natijasi
+dist/
+.netlify/
+
+.DS_Store

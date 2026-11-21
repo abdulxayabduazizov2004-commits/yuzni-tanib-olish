@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FaceID Vision</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<!-- ============ KIRISH / RO'YXATDAN O'TISH ============ -->
+<div class="auth hidden" id="auth">
+  <div class="auth-art">
+    <div class="brand big">
+      <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17a5 5 0 0 1 9 0"/></svg></div>
+      <div><b>FaceID</b> Vision<small>Yuz va tana tanish tizimi</small></div>
+    </div>
+    <div class="scan">
+      <div class="scan-face"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><i class="scan-line"></i></div>
+    </div>
+    <h2>Aqlli tanib olish platformasi</h2>
+    <ul class="features">
+      <li><span>✦</span>Yuz va tana bo'yicha real vaqtda tanish</li>
+      <li><span>✦</span>Har safar yangi ko'rinishlarni o'rganib boradi</li>
+      <li><span>✦</span>Ko'zoynak, kepka, soqol va boshqa atributlar</li>
+      <li><span>✦</span>Rollar: administrator, direktor, foydalanuvchi</li>
+    </ul>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-box">
+      <div class="auth-tabs"><button data-tab="login" class="active">Kirish</button><button data-tab="signup">Ro'yxatdan o'tish</button><i></i></div>
+      <form id="login-form" class="auth-form">
+        <h1>Xush kelibsiz 👋</h1><p class="muted">Davom etish uchun hisobingizga kiring</p>
+        <div class="field"><label>Login</label><input name="username" autocomplete="username" required></div>
+        <div class="field"><label>Parol</label><div class="pw"><input name="password" type="password" autocomplete="current-password" required><button type="button" class="eye">👁</button></div></div>
+        <label class="check"><input type="checkbox" name="remember" checked> Meni eslab qol</label>
+        <div class="auth-error" id="login-error"></div>
+        <button class="btn primary wide" type="submit">Kirish</button>
+        <p class="auth-switch">Hisobingiz yo'qmi? <a data-tab="signup">Ro'yxatdan o'ting</a></p>
+      </form>
+      <form id="signup-form" class="auth-form hidden">
+        <h1>Hisob yaratish</h1><p class="muted" id="signup-hint">Yangi hisob "Foydalanuvchi" rolida ochiladi. Rolni administrator beradi.</p>
+        <div class="field"><label>Ism-familiya</label><input name="full_name" autocomplete="name" required></div>
+        <div class="field"><label>Login</label><input name="username" autocomplete="username" required pattern="[A-Za-z0-9_.\-]{3,32}" title="3-32 belgi: lotin harflari, raqamlar, _ . -"></div>
+        <div class="field"><label>Parol</label><div class="pw"><input name="password" type="password" autocomplete="new-password" required minlength="6"><button type="button" class="eye">👁</button></div>
+          <div class="strength"><i id="pw-bar"></i></div></div>
+        <div class="field"><label>Parolni takrorlang</label><input name="password2" type="password" autocomplete="new-password" required></div>
+        <div class="auth-error" id="signup-error"></div>
+        <button class="btn primary wide" type="submit">Ro'yxatdan o'tish</button>
+        <p class="auth-switch">Hisobingiz bormi? <a data-tab="login">Kirish</a></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="app hidden" id="app">
+  <!-- ============ YON MENYU ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17a5 5 0 0 1 9 0"/></svg>
+      </div>
+      <div><b>FaceID</b> Vision<small>Yuz va tana tanish</small></div>
+    </div>
+    <nav>
+      <a data-page="camera" class="active">
+        <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Jonli kamera</a>
+      <a data-page="register">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Ro'yxatdan o'tkazish</a>
+      <a data-page="users">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Foydalanuvchilar<span class="count" id="nav-users">0</span></a>
+      <a data-page="dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+      <a data-page="accounts">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Hisoblar</a>
+      <a data-page="settings">
+        <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Sozlamalar</a>
+    </nav>
+    <div class="sidebar-foot cam-foot">
+      <div class="status-dot" id="cam-dot"></div>
+      <div><b id="cam-state">Kamera o'chiq</b><small id="fps">—</small></div>
+    </div>
+    <div class="me" id="me">
+      <div class="avatar" id="me-avatar"></div>
+      <div class="me-info"><b id="me-name">—</b><small id="me-role">—</small></div>
+      <button class="icon-btn" id="btn-me-menu" title="Hisob"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+      <div class="me-menu hidden" id="me-menu">
+        <button id="btn-change-pw"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Parolni o'zgartirish</button>
+        <button id="btn-logout" class="danger-text"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Chiqish</button>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ============ 1. KAMERA ============ -->
+    <section id="page-camera" class="page active">
+      <header class="page-head">
+        <div><h1>Jonli kamera</h1><p>Yuz va tana bo'yicha real vaqtda tanib olish</p></div>
+        <div class="head-actions">
+          <label class="switch"><input type="checkbox" id="sw-learn" checked><span></span>Avtomatik o'rganish</label>
+          <label class="switch"><input type="checkbox" id="sw-body" checked><span></span>Tana orqali tanish</label>
+          <label class="switch"><input type="checkbox" id="sw-attr" checked><span></span>Ko'zoynak, kepka, soqol...</label>
+          <button class="btn ghost" id="btn-analyze">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Rasmdan aniqlash</button>
+          <input type="file" id="analyze-file" accept="image/*" hidden>
+        </div>
+      </header>
+      <div class="cam-layout">
+        <div class="card video-card">
+          <div class="video-wrap" id="video-wrap">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="live-badge"><i></i>LIVE</div>
+            <div class="cam-placeholder" id="cam-placeholder">
+              <div class="pulse-ring"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+              <h3>Kamerani yoqish</h3>
+              <p>Brauzer kameradan foydalanishga ruxsat so'raydi</p>
+              <button class="btn primary" id="btn-start-cam">Kamerani yoqish</button>
+            </div>
+            <div class="reg-overlay hidden" id="reg-overlay">
+              <div class="reg-top">
+                <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" id="reg-ring"/></svg><span id="reg-pct">0%</span></div>
+                <div class="reg-text">
+                  <small id="reg-name">—</small>
+                  <h2 id="reg-msg">Kameraga to'g'ri qarang</h2>
+                  <div class="steps" id="reg-steps"></div>
+                </div>
+                <button class="btn danger sm" id="btn-reg-cancel">Bekor qilish</button>
+              </div>
+              <div class="face-guide"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cam-side">
+          <div class="card">
+            <div class="card-head"><h3>Hozir kadrda</h3><span class="pill" id="inframe-count">0</span></div>
+            <div id="inframe" class="inframe"><div class="empty">Hech kim yo'q</div></div>
+          </div>
+          <div class="card grow">
+            <div class="card-head"><h3>Faollik jurnali</h3><button class="link" id="btn-clear-log">tozalash</button></div>
+            <div id="log" class="log"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. RO'YXATDAN O'TKAZISH ============ -->
+    <section id="page-register" class="page">
+      <header class="page-head">
+        <div><h1 id="reg-title">Yangi foydalanuvchi</h1><p>Anketani to'ldiring, so'ng yuzni kamera yoki rasmlar orqali ro'yxatga oling</p></div>
+      </header>
+      <div class="reg-layout">
+        <div class="card">
+          <div class="card-head"><h3>Shaxsiy ma'lumotlar</h3><span class="muted">* majburiy</span></div>
+          <form id="reg-form" class="form-grid" autocomplete="off"></form>
+        </div>
+        <div class="reg-options">
+          <div class="option-card" id="opt-camera">
+            <div class="opt-icon violet"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <div><h3>Kamera orqali</h3><p>6 qadam: to'g'ri, chap, o'ng, yuqori, past va yuz ifodasi — 24 ta namuna</p></div>
+            <span class="arrow">→</span>
+          </div>
+          <label class="option-card drop" id="opt-images">
+            <div class="opt-icon cyan"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+            <div><h3>Rasmlar orqali</h3><p>Rasmlarni shu yerga tashlang yoki tanlang — telefon, hujjat, guruh surati...</p></div>
+            <span class="arrow">→</span>
+            <input type="file" id="reg-files" accept="image/*" multiple hidden>
+          </label>
+          <button class="btn primary wide hidden" id="btn-save-edit">O'zgarishlarni saqlash</button>
+          <button class="btn ghost wide" id="btn-clear-form">Formani tozalash</button>
+          <div class="tip">
+            <b>Tizim doimiy o'rganadi.</b> Ro'yxatdan o'tgandan so'ng ham har safar kamerada ko'rganda yangi
+            ko'rinishlarni — yorug'lik, burchak, soch turmagi, ko'zoynak, kiyim — avtomatik eslab qoladi.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. FOYDALANUVCHILAR ============ -->
+    <section id="page-users" class="page">
+      <header class="page-head">
+        <div><h1>Foydalanuvchilar</h1><p id="users-sub">—</p></div>
+        <div class="head-actions">
+          <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="user-search" placeholder="Ism, bo'lim, telefon..."></div>
+          <button class="btn primary" data-goto="register">+ Yangi</button>
+        </div>
+      </header>
+      <div id="users-grid" class="users-grid"></div>
+    </section>
+
+    <!-- ============ 4. DASHBOARD ============ -->
+    <section id="page-dashboard" class="page">
+      <header class="page-head">
+        <div><h1>Dashboard</h1><p id="dash-time">—</p></div>
+        <div class="head-actions"><a class="btn ghost" href="/api/events.csv">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>CSV eksport</a></div>
+      </header>
+      <div class="kpis" id="kpis"></div>
+      <div class="charts">
+        <div class="card"><div class="card-head"><h3>Oxirgi 14 kun</h3><div class="legend"><i class="c1"></i>aniqlangan<i class="c2"></i>noma'lum</div></div><div id="chart-days" class="chart"></div></div>
+        <div class="card"><div class="card-head"><h3>Bugun — soatlar kesimida</h3></div><div id="chart-hours" class="chart"></div></div>
+      </div>
+      <div class="dash-bottom">
+        <div class="card">
+          <div class="card-head"><h3>Hodisalar tarixi</h3><div class="chips" id="ev-chips"></div></div>
+          <div class="table-wrap"><table class="table"><thead><tr><th></th><th>Foydalanuvchi</th><th>Hodisa</th><th>Usul</th><th>Tashqi ko'rinish</th><th>Ishonch</th><th>Vaqt</th></tr></thead><tbody id="ev-body"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Eng faol foydalanuvchilar</h3></div>
+          <div id="top-users" class="top-users"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISOBLAR (admin) ============ -->
+    <section id="page-accounts" class="page">
+      <header class="page-head">
+        <div><h1>Tizim hisoblari</h1><p>Kim tizimga kira oladi va qaysi bo'limlarni ko'radi</p></div>
+      </header>
+      <div class="role-cards">
+        <div class="card role-card"><span class="tag violet">Administrator</span><p>Barcha bo'limlar: kamera, ro'yxatdan o'tkazish, foydalanuvchilar, dashboard, sozlamalar, hisoblar</p></div>
+        <div class="card role-card"><span class="tag warn">Direktor</span><p>Faqat Dashboard: statistika, grafiklar, hodisalar tarixi, CSV eksport</p></div>
+        <div class="card role-card"><span class="tag body">Foydalanuvchi</span><p>Faqat jonli kamera: tanib olish natijalarini ko'rish</p></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table class="table"><thead><tr><th>Hisob</th><th>Login</th><th>Rol</th><th>Holat</th><th>Oxirgi kirish</th><th>Yaratilgan</th><th></th></tr></thead><tbody id="acc-body"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ============ 5. SOZLAMALAR ============ -->
+    <section id="page-settings" class="page">
+      <header class="page-head"><div><h1>Sozlamalar</h1><p>Tanish va o'rganish chegaralari</p></div></header>
+      <div class="card settings" id="settings"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg hidden" id="modal-bg"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
